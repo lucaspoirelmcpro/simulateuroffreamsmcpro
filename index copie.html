@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulateur de Coût</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&display=swap');
+        
+        body {
+            font-family: 'Montserrat', sans-serif;
+            text-align: center;
+            background-color: #f0f0f0;
+            color: #333;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        .cards {
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .card {
+            flex: 1;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+            text-align: center;
+        }
+        .card:hover {
+            transform: scale(1.08);
+            box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.2);
+        }
+        .essentiel { border-top: 5px solid #e63946; }
+        .avance { border-top: 5px solid #1d3557; }
+        .expert { border-top: 5px solid #457b9d; }
+        .price { font-size: 18px; color: #555; margin-top: 5px; font-weight: bold; }
+        input[type="range"] {
+            width: 100%;
+            margin-top: 10px;
+            accent-color: #e63946;
+        }
+        output {
+            display: block;
+            font-weight: bold;
+            margin-top: 5px;
+            font-size: 18px;
+        }
+        .summary {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f1f1f1;
+            border-radius: 10px;
+            box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.1);
+        }
+        .summary h3 {
+            margin-bottom: 10px;
+            color: #333;
+            font-size: 1.2rem;
+        }
+        .cost-breakdown {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        .cost-item {
+            background-color: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        .cost-item h4 {
+            color: #555;
+            margin-bottom: 5px;
+        }
+        .cost-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        .total-cost {
+            background-color: #e63946;
+            color: white;
+        }
+        .year-selector {
+            display: flex;
+            justify-content: center;
+            margin-top: 15px;
+        }
+        .year-selector button {
+            padding: 10px 20px;
+            border: none;
+            background: #ddd;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 5px;
+            transition: background 0.3s;
+            margin: 0 5px;
+        }
+        .year-selector button.active {
+            background: #e63946;
+            color: white;
+        }
+        #exportPdf, #envoyerSimulation {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            color: white;
+            background-color: #1d3557;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        #exportPdf:hover, #envoyerSimulation:hover {
+            background-color: #457b9d;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        @media (max-width: 768px) {
+            .cards {
+                flex-direction: column;
+            }
+            .card {
+                flex: 1 0 100%;
+                margin-bottom: 15px;
+            }
+            .year-selector {
+                flex-wrap: wrap;
+            }
+            .year-selector button {
+                margin-bottom: 10px;
+            }
+        }
+        #simulationForm {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Simulateur de Coût</h2>
+
+        <div class="cards">
+            <div class="card essentiel">
+                <h3>Essentiel</h3>
+                <p class="price">19€ / mois par licence</p>
+                <input type="range" id="essentiel" min="0" max="30" value="0" step="1" oninput="calculer()">
+                <output id="valEssentiel">0</output> licences
+                <div class="cost-item">
+                    <h4>Coût Essentiel</h4>
+                    <span class="cost-value">0,00 €</span>
+                </div>
+            </div>
+
+            <div class="card avance">
+                <h3>Avancé</h3>
+                <p class="price">39€ / mois par licence</p>
+                <input type="range" id="avance" min="0" max="30" value="0" step="1" oninput="calculer()">
+                <output id="valAvance">0</output> licences
+                <div class="cost-item">
+                    <h4>Coût Avancé</h4>
+                    <span class="cost-value">0,00 €</span>
+                </div>
+            </div>
+
+            <div class="card expert">
+                <h3>Expert</h3>
+                <p class="price">49€ / mois par licence</p>
+                <input type="range" id="expert" min="0" max="30" value="0" step="1" oninput="calculer()">
+                <output id="valExpert">0</output> licences
+                <div class="cost-item">
+                    <h4>Coût Expert</h4>
+                    <span class="cost-value">0,00 €</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="cards">
+            <div class="card data-science-1">
+                <h3>Workshop Data Science</h3>
+                <p class="price">250€ (unique)</p>
+                <input type="checkbox" id="workshop" onchange="calculer()">
+            </div>
+
+            <div class="card data-science-2">
+                <h3>2 Ateliers + Suivi</h3>
+                <p class="price">40€ / mois</p>
+                <input type="checkbox" id="ateliers" onchange="calculer()">
+            </div>
+
+            <div class="card data-science-3">
+                <h3>Accompagnement Pro</h3>
+                <p class="price">165€ / mois</p>
+                <input type="checkbox" id="accompagnement" onchange="calculer()">
+            </div>
+        </div>
+
+        <div class="year-selector">
+            <button id="y1" class="active" onclick="setYears(1)">1 an</button>
+            <button id="y2" onclick="setYears(2)">2 ans (-5%)</button>
+            <button id="y3" onclick="setYears(3)">3 ans (-8%)</button>
+        </div>
+
+        <div class="summary">
+            <h3>Récapitulatif des coûts</h3>
+            <div class="cost-breakdown">
+                <div class="cost-item total-cost">
+                    <h4>Mensuel Total</h4>
+                    <span id="coutMensuel" class="cost-value">0,00 €</span>
+                </div>
+                <div class="cost-item total-cost">
+                    <h4>Annuel Total</h4>
+                    <span id="coutAnnuel" class="cost-value">0,00 €</span>
+                </div>
+                <div class="cost-item total-cost">
+                    <h4>Total Projet</h4>
+                    <span id="coutTotal" class="cost-value">0,00 €</span>
+                </div>
+            </div>
+        </div>
+
+        <button id="exportPdf">Exporter en PDF</button>
+        <button id="envoyerSimulation" onclick="showForm()">Envoyer la simulation</button>
+        <button id="resetButton">Réinitialiser</button>
+
+        <div id="simulationForm" style="display: none;">
+            <h3>Envoyer votre simulation</h3>
+            <form action="mailto:l.poirel@mycoachpro.io" method="post" enctype="text/plain">
+                <input type="hidden" name="Essentiel" id="formEssentiel">
+                <input type="hidden" name="Avancé" id="formAvance">
+                <input type="hidden" name="Expert" id="formExpert">
+                <input type="hidden" name="Workshop" id="formWorkshop">
+                <input type="hidden" name="Ateliers" id="formAteliers">
+                <input type="hidden" name="Accompagnement" id="formAccompagnement">
+                <input type="hidden" name="Durée" id="formDuree">
+                <input type="hidden" name="Coût Mensuel" id="formCoutMensuel">
+                <input type="hidden" name="Coût Annuel" id="formCoutAnnuel">
+                <input type="hidden" name="Coût Total" id="formCoutTotal">
+                <button type="submit">Envoyer par email</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script>
+        let annees = 1;
+
+        function setYears(value) {
+            annees = value;
+            document.querySelectorAll('.year-selector button').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`y${value}`).classList.add('active');
+            calculer();
+        }
+
+        function calculer() {
+            let essentiel = parseInt(document.getElementById("essentiel").value) || 0;
+            let avance = parseInt(document.getElementById("avance").value) || 0;
+            let expert = parseInt(document.getElementById("expert").value) || 0;
+            let workshop = document.getElementById("workshop").checked ? 250 : 0;
+            let ateliers = document.getElementById("ateliers").checked ? 40 : 0;
+            let accompagnement = document.getElementById("accompagnement").checked ? 165 : 0;
+
+            let prixMensuelEssentiel = essentiel * 19;
+            let prixMensuelAvance = avance * 39;
+            let prixMensuelExpert = expert * 49;
+            let prixMensuel = prixMensuelEssentiel + prixMensuelAvance + prixMensuelExpert + ateliers + accompagnement;
+
+            let reduction = annees === 2 ? 0.05 : (annees === 3 ? 0.08 : 0);
+            prixMensuel *= (1 - reduction);
+            let prixAnnuel = prixMensuel * 12;
+            let coutTotal = prixAnnuel * annees + workshop;
+
+            const formatCurrency = (amount) => new Intl.NumberFormat('fr-FR', {style: 'currency', currency: 'EUR'}).format(amount);
+
+            // Afficher les nombres de licences
+            document.getElementById("valEssentiel").textContent = essentiel;
+            document.getElementById("valAvance").textContent = avance;
+            document.getElementById("valExpert").textContent = expert;
+
+            // Afficher les coûts
+            document.querySelector(".essentiel .cost-value").textContent = formatCurrency(prixMensuelEssentiel);
+            document.querySelector(".avance .cost-value").textContent = formatCurrency(prixMensuelAvance);
+            document.querySelector(".expert .cost-value").textContent = formatCurrency(prixMensuelExpert);
+
+            document.getElementById("coutMensuel").textContent = formatCurrency(prixMensuel);
+            document.getElementById("coutAnnuel").textContent = formatCurrency(prixAnnuel);
+            document.getElementById("coutTotal").textContent = formatCurrency(coutTotal);
+
+            // Préparer les données à envoyer dans le mail
+            document.getElementById("formEssentiel").value = essentiel;
+            document.getElementById("formAvance").value = avance;
+            document.getElementById("formExpert").value = expert;
+            document.getElementById("formWorkshop").value = workshop;
+            document.getElementById("formAteliers").value = ateliers;
+            document.getElementById("formAccompagnement").value = accompagnement;
+            document.getElementById("formDuree").value = annees;
+            document.getElementById("formCoutMensuel").value = prixMensuel;
+            document.getElementById("formCoutAnnuel").value = prixAnnuel;
+            document.getElementById("formCoutTotal").value = coutTotal;
+        }
+
+        function showForm() {
+            document.getElementById("simulationForm").style.display = 'block';
+            calculer(); // Assure que les données sont actualisées avant envoi
+        }
+
+        // Appeler la fonction lors du chargement initial pour s'assurer que tout est bien initialisé
+        calculer();
+    </script>
+
+</body>
+</html>
