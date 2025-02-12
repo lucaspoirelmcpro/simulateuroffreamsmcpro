@@ -1,340 +1,646 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simulateur de Coût</title>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&display=swap');
-        
-        body {
-            font-family: 'Montserrat', sans-serif;
-            text-align: center;
-            background-color: #f0f0f0;
-            color: #333;
-            padding: 20px;
-        }
-        .container {
-            max-width: 900px;
-            margin: auto;
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.2);
-        }
-        .cards {
-            display: flex;
-            justify-content: space-between;
-            gap: 15px;
-            margin-bottom: 30px;
-        }
-        .card {
-            flex: 1;
-            background: white;
-            padding: 15px;
-            border-radius: 10px;
-            box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.1);
-            transition: transform 0.3s, box-shadow 0.3s;
-            text-align: center;
-        }
-        .card:hover {
-            transform: scale(1.08);
-            box-shadow: 5px 5px 10px rgba(0, 0, 0, 0.2);
-        }
-        .essentiel { border-top: 5px solid #e63946; }
-        .avance { border-top: 5px solid #1d3557; }
-        .expert { border-top: 5px solid #457b9d; }
-        .price { font-size: 18px; color: #555; margin-top: 5px; font-weight: bold; }
-        input[type="range"] {
-            width: 100%;
-            margin-top: 10px;
-            accent-color: #e63946;
-        }
-        output {
-            display: block;
-            font-weight: bold;
-            margin-top: 5px;
-            font-size: 18px;
-        }
-        .summary {
-            margin-top: 20px;
-            padding: 20px;
-            background: #f1f1f1;
-            border-radius: 10px;
-            box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.1);
-        }
-        .summary h3 {
-            margin-bottom: 10px;
-            color: #333;
-            font-size: 1.2rem;
-        }
-        .cost-breakdown {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-        }
-        .cost-item {
-            background-color: #fff;
-            padding: 15px;
-            border-radius: 8px;
-            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
-            text-align: center;
-        }
-        .cost-item h4 {
-            color: #555;
-            margin-bottom: 5px;
-        }
-        .cost-value {
-            font-size: 1.5rem;
-            font-weight: bold;
-        }
-        .total-cost {
-            background-color: #e63946;
-            color: white;
-        }
-        .year-selector {
-            display: flex;
-            justify-content: center;
-            margin-top: 15px;
-        }
-        .year-selector button {
-            padding: 10px 20px;
-            border: none;
-            background: #ddd;
-            cursor: pointer;
-            font-size: 16px;
-            font-weight: bold;
-            border-radius: 5px;
-            transition: background 0.3s;
-            margin: 0 5px;
-        }
-        .year-selector button.active {
-            background: #e63946;
-            color: white;
-        }
-        #exportPdf, #envoyerSimulation {
-            margin-top: 20px;
-            padding: 10px 20px;
-            font-size: 16px;
-            font-weight: bold;
-            color: white;
-            background-color: #1d3557;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
-        #exportPdf:hover, #envoyerSimulation:hover {
-            background-color: #457b9d;
-        }
-        button {
-            background-color: #007bff;
-            color: white;
-            padding: 12px 25px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        button:hover {
-            background-color: #0056b3;
-        }
-        @media (max-width: 768px) {
-            .cards {
-                flex-direction: column;
-            }
-            .card {
-                flex: 1 0 100%;
-                margin-bottom: 15px;
-            }
-            .year-selector {
-                flex-wrap: wrap;
-            }
-            .year-selector button {
-                margin-bottom: 10px;
-            }
-        }
-        #simulationForm {
-            margin-top: 20px;
-            padding: 15px;
-            background: #f9f9f9;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simulateur de Coût - Proposition Commerciale</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&display=swap');
+
+    :root {
+      --primary-color: #e63946;
+      --secondary-color: #1d3557;
+      --tertiary-color: #457b9d;
+      --background-color: #f8f9fa;
+      --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      --transition-speed: 0.3s;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: 'Montserrat', sans-serif;
+      background-color: var(--background-color);
+      color: #333;
+      line-height: 1.6;
+      padding: 20px;
+    }
+
+    /* Conteneur interactif du simulateur */
+    #simulateurContainer {
+      max-width: 1200px;
+      margin: auto;
+      background: white;
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: var(--card-shadow);
+      margin-bottom: 20px;
+    }
+
+    /* Champ de saisie du nom du club */
+    .club-input {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .club-input input {
+      padding: 8px;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      width: 300px;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .header h2 {
+      color: var(--secondary-color);
+      font-size: 2.5rem;
+      margin-bottom: 10px;
+    }
+
+    .section-title {
+      text-align: left;
+      margin: 40px 0 20px 0;
+      padding-bottom: 10px;
+      border-bottom: 3px solid var(--primary-color);
+      color: var(--secondary-color);
+      font-size: 1.5rem;
+      font-weight: 600;
+      position: relative;
+    }
+
+    .section-title::after {
+      content: '';
+      position: absolute;
+      bottom: -3px;
+      left: 0;
+      width: 60px;
+      height: 3px;
+      background-color: var(--primary-color);
+    }
+
+    .section-description {
+      color: #666;
+      margin-bottom: 20px;
+      font-size: 1rem;
+      text-align: left;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      margin-bottom: 40px;
+    }
+
+    .card {
+      background: white;
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: var(--card-shadow);
+      transition: transform var(--transition-speed), box-shadow var(--transition-speed);
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .essentiel { border-top: 5px solid #e63946; }
+    .avance { border-top: 5px solid #1d3557; }
+    .expert { border-top: 5px solid #457b9d; }
+
+    .price {
+      font-size: 18px;
+      color: #555;
+      margin: 10px 0;
+      font-weight: bold;
+    }
+    
+    .price-ttc {
+      font-size: 14px;
+      color: #777;
+      margin-bottom: 10px;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      height: 8px;
+      border-radius: 4px;
+      appearance: none;
+      background: #ddd;
+      outline: none;
+      transition: background var(--transition-speed);
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--primary-color);
+      cursor: pointer;
+      transition: transform var(--transition-speed);
+    }
+
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+    }
+
+    .checkbox-container {
+      margin: 15px 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    input[type="checkbox"] {
+      margin-right: 10px;
+      width: 20px;
+      height: 20px;
+    }
+
+    output {
+      display: block;
+      font-weight: bold;
+      margin-top: 10px;
+      font-size: 16px;
+      text-align: center;
+    }
+
+    .year-selector {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin: 30px 0;
+    }
+
+    .year-selector button {
+      padding: 10px 20px;
+      border: none;
+      background: #ddd;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all var(--transition-speed);
+    }
+
+    .year-selector button.active {
+      background: var(--primary-color);
+      color: white;
+    }
+
+    .summary {
+      background: #f8f9fa;
+      padding: 30px;
+      border-radius: 12px;
+      margin-top: 40px;
+    }
+
+    .cost-breakdown {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin-top: 20px;
+    }
+
+    .cost-item {
+      padding: 20px;
+      border-radius: 8px;
+      text-align: center;
+      background: white;
+      box-shadow: var(--card-shadow);
+    }
+
+    .total-cost {
+      background: var(--primary-color);
+      color: white;
+    }
+
+    .cost-value {
+      font-size: 1.5rem;
+      font-weight: bold;
+      margin-top: 5px;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+      margin-top: 30px;
+    }
+
+    button {
+      padding: 12px 25px;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform var(--transition-speed);
+      background: var(--secondary-color);
+      color: white;
+    }
+
+    button:hover {
+      transform: translateY(-2px);
+      opacity: 0.9;
+    }
+
+    /* ---------- Styles pour l'export PDF ---------- */
+    /* En mode écran, le résumé PDF est masqué */
+    #pdfSummary {
+      display: none;
+    }
+    @media print {
+      /* Masquer la partie interactive */
+      #simulateurContainer {
+        display: none !important;
+      }
+      /* Afficher le résumé PDF */
+      #pdfSummary {
+        display: block !important;
+      }
+      body {
+        margin: 0;
+        padding: 0;
+        font-size: 10px;
+      }
+      .container {
+        padding: 10px;
+        margin: 0;
+        max-width: 100%;
+      }
+      h1, h2, h3 {
+        margin: 5px 0;
+      }
+      p {
+        margin: 3px 0;
+      }
+      .action-buttons {
+        display: none;
+      }
+      /* Éviter les sauts de page dans les blocs importants */
+      .container, .header, .section-title, .cost-item, .card {
+        page-break-inside: avoid;
+      }
+    }
+  </style>
 </head>
 <body>
-
-    <div class="container">
-        <h2>Simulateur de Coût</h2>
-
-        <div class="cards">
-            <div class="card essentiel">
-                <h3>Essentiel</h3>
-                <p class="price">19€ / mois par licence</p>
-                <input type="range" id="essentiel" min="0" max="30" value="0" step="1" oninput="calculer()">
-                <output id="valEssentiel">0</output> licences
-                <div class="cost-item">
-                    <h4>Coût Essentiel</h4>
-                    <span class="cost-value">0,00 €</span>
-                </div>
-            </div>
-
-            <div class="card avance">
-                <h3>Avancé</h3>
-                <p class="price">39€ / mois par licence</p>
-                <input type="range" id="avance" min="0" max="30" value="0" step="1" oninput="calculer()">
-                <output id="valAvance">0</output> licences
-                <div class="cost-item">
-                    <h4>Coût Avancé</h4>
-                    <span class="cost-value">0,00 €</span>
-                </div>
-            </div>
-
-            <div class="card expert">
-                <h3>Expert</h3>
-                <p class="price">49€ / mois par licence</p>
-                <input type="range" id="expert" min="0" max="30" value="0" step="1" oninput="calculer()">
-                <output id="valExpert">0</output> licences
-                <div class="cost-item">
-                    <h4>Coût Expert</h4>
-                    <span class="cost-value">0,00 €</span>
-                </div>
-            </div>
-        </div>
-
-        <div class="cards">
-            <div class="card data-science-1">
-                <h3>Workshop Data Science</h3>
-                <p class="price">250€ (unique)</p>
-                <input type="checkbox" id="workshop" onchange="calculer()">
-            </div>
-
-            <div class="card data-science-2">
-                <h3>2 Ateliers + Suivi</h3>
-                <p class="price">40€ / mois</p>
-                <input type="checkbox" id="ateliers" onchange="calculer()">
-            </div>
-
-            <div class="card data-science-3">
-                <h3>Accompagnement Pro</h3>
-                <p class="price">165€ / mois</p>
-                <input type="checkbox" id="accompagnement" onchange="calculer()">
-            </div>
-        </div>
-
-        <div class="year-selector">
-            <button id="y1" class="active" onclick="setYears(1)">1 an</button>
-            <button id="y2" onclick="setYears(2)">2 ans (-5%)</button>
-            <button id="y3" onclick="setYears(3)">3 ans (-8%)</button>
-        </div>
-
-        <div class="summary">
-            <h3>Récapitulatif des coûts</h3>
-            <div class="cost-breakdown">
-                <div class="cost-item total-cost">
-                    <h4>Mensuel Total</h4>
-                    <span id="coutMensuel" class="cost-value">0,00 €</span>
-                </div>
-                <div class="cost-item total-cost">
-                    <h4>Annuel Total</h4>
-                    <span id="coutAnnuel" class="cost-value">0,00 €</span>
-                </div>
-                <div class="cost-item total-cost">
-                    <h4>Total Projet</h4>
-                    <span id="coutTotal" class="cost-value">0,00 €</span>
-                </div>
-            </div>
-        </div>
-
-        <button id="exportPdf">Exporter en PDF</button>
-        <button id="envoyerSimulation" onclick="showForm()">Envoyer la simulation</button>
-        <button id="resetButton">Réinitialiser</button>
-
-        <div id="simulationForm" style="display: none;">
-            <h3>Envoyer votre simulation</h3>
-            <form action="mailto:l.poirel@mycoachpro.io" method="post" enctype="text/plain">
-                <input type="hidden" name="Essentiel" id="formEssentiel">
-                <input type="hidden" name="Avancé" id="formAvance">
-                <input type="hidden" name="Expert" id="formExpert">
-                <input type="hidden" name="Workshop" id="formWorkshop">
-                <input type="hidden" name="Ateliers" id="formAteliers">
-                <input type="hidden" name="Accompagnement" id="formAccompagnement">
-                <input type="hidden" name="Durée" id="formDuree">
-                <input type="hidden" name="Coût Mensuel" id="formCoutMensuel">
-                <input type="hidden" name="Coût Annuel" id="formCoutAnnuel">
-                <input type="hidden" name="Coût Total" id="formCoutTotal">
-                <button type="submit">Envoyer par email</button>
-            </form>
-        </div>
+  <!-- Conteneur interactif du simulateur -->
+  <div class="container" id="simulateurContainer">
+    <div class="club-input">
+      <label for="clubNameInput">Nom du Club :</label>
+      <input type="text" id="clubNameInput" placeholder="Entrez le nom de votre club">
+    </div>
+    <div class="header">
+      <h2>Simulateur de Coût</h2>
+      <p>Calculez le coût de votre projet en quelques clics</p>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <script>
-        let annees = 1;
+    <div class="section-title">Choisissez vos Licences</div>
+    <p class="section-description">Sélectionnez le nombre de licences dont vous avez besoin pour chaque niveau d'accès</p>
+    
+    <div class="cards">
+      <div class="card essentiel">
+        <h3>Essentiel</h3>
+        <p class="price">19€ HT / mois par licence</p>
+        <p class="price-ttc">22,80€ TTC / mois</p>
+        <input type="range" id="essentiel" min="0" max="30" value="0" step="1" oninput="calculer()">
+        <output id="valEssentiel">0</output> licences
+        <div class="cost-item">
+          <h4>Coût Essentiel</h4>
+          <p id="coutEssentielHTCard" class="cost-value">0,00 € HT</p>
+          <p id="coutEssentielTTCCard" class="cost-value">0,00 € TTC</p>
+        </div>
+      </div>
 
-        function setYears(value) {
-            annees = value;
-            document.querySelectorAll('.year-selector button').forEach(btn => btn.classList.remove('active'));
-            document.getElementById(`y${value}`).classList.add('active');
-            calculer();
+      <div class="card avance">
+        <h3>Avancé</h3>
+        <p class="price">39€ HT / mois par licence</p>
+        <p class="price-ttc">46,80€ TTC / mois</p>
+        <input type="range" id="avance" min="0" max="30" value="0" step="1" oninput="calculer()">
+        <output id="valAvance">0</output> licences
+        <div class="cost-item">
+          <h4>Coût Avancé</h4>
+          <p id="coutAvanceHTCard" class="cost-value">0,00 € HT</p>
+          <p id="coutAvanceTTCCard" class="cost-value">0,00 € TTC</p>
+        </div>
+      </div>
+
+      <div class="card expert">
+        <h3>Expert</h3>
+        <p class="price">49€ HT / mois par licence</p>
+        <p class="price-ttc">58,80€ TTC / mois</p>
+        <input type="range" id="expert" min="0" max="30" value="0" step="1" oninput="calculer()">
+        <output id="valExpert">0</output> licences
+        <div class="cost-item">
+          <h4>Coût Expert</h4>
+          <p id="coutExpertHTCard" class="cost-value">0,00 € HT</p>
+          <p id="coutExpertTTCCard" class="cost-value">0,00 € TTC</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-title">Services Data Science</div>
+    <p class="section-description">Enrichissez votre expérience avec nos services d'accompagnement data science</p>
+
+    <div class="cards">
+      <div class="card">
+        <h3>Workshop Data Science</h3>
+        <p class="price">250€ HT (unique)</p>
+        <p class="price-ttc">300€ TTC (unique)</p>
+        <div class="checkbox-container">
+          <input type="checkbox" id="workshop" onchange="calculer()">
+          <label for="workshop">Ajouter à mon devis</label>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>2 Ateliers + Suivi</h3>
+        <p class="price">40€ HT / mois</p>
+        <p class="price-ttc">48€ TTC / mois</p>
+        <div class="checkbox-container">
+          <input type="checkbox" id="ateliers" onchange="calculer()">
+          <label for="ateliers">Ajouter à mon devis</label>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Accompagnement Pro</h3>
+        <p class="price">165€ HT / mois</p>
+        <p class="price-ttc">198€ TTC / mois</p>
+        <div class="checkbox-container">
+          <input type="checkbox" id="accompagnement" onchange="calculer()">
+          <label for="accompagnement">Ajouter à mon devis</label>
+        </div>
+      </div>
+    </div>
+
+    <div class="year-selector">
+      <button id="y1" class="active" onclick="setYears(1)">1 an</button>
+      <button id="y2" onclick="setYears(2)">2 ans (-5%)</button>
+      <button id="y3" onclick="setYears(3)">3 ans (-8%)</button>
+    </div>
+
+    <div class="section-title">Récapitulatif Financier</div>
+    <p class="section-description">Visualisez le détail des coûts de votre configuration</p>
+
+    <div class="summary">
+      <div class="cost-breakdown">
+        <div class="cost-item total-cost">
+          <h4>Mensuel Total</h4>
+          <p id="coutMensuelHT" class="cost-value">0,00 € HT</p>
+          <p id="coutMensuelTTC" class="cost-value">0,00 € TTC</p>
+        </div>
+        <div class="cost-item total-cost">
+          <h4>Annuel Total</h4>
+          <p id="coutAnnuelHT" class="cost-value">0,00 € HT</p>
+          <p id="coutAnnuelTTC" class="cost-value">0,00 € TTC</p>
+        </div>
+        <div class="cost-item total-cost">
+          <h4>Total Projet</h4>
+          <p id="coutTotalHT" class="cost-value">0,00 € HT</p>
+          <p id="coutTotalTTC" class="cost-value">0,00 € TTC</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="action-buttons">
+      <button onclick="exportPDF()">Exporter en PDF</button>
+      <button onclick="showForm()">Envoyer la simulation</button>
+      <button onclick="resetForm()">Réinitialiser</button>
+    </div>
+  </div>
+
+  <!-- Conteneur de synthèse pour l'export PDF (affiché uniquement en mode impression) -->
+  <div class="container" id="pdfSummary"></div>
+
+  <script>
+    // Dictionnaire associant le nom (ou abréviations) du club en minuscules à l'URL du logo PNG
+    const clubLogos = {
+      "paris saint-germain": "https://upload.wikimedia.org/wikipedia/en/thumb/a/a7/Paris_Saint-Germain_F.C._logo.svg/1200px-Paris_Saint-Germain_F.C._logo.svg.png",
+      "psg": "https://upload.wikimedia.org/wikipedia/en/thumb/a/a7/Paris_Saint-Germain_F.C._logo.svg/1200px-Paris_Saint-Germain_F.C._logo.svg.png",
+      "olympique de marseille": "https://upload.wikimedia.org/wikipedia/fr/thumb/8/8d/Olympique_de_Marseille_logo.svg/1200px-Olympique_de_Marseille_logo.svg.png",
+      "om": "https://upload.wikimedia.org/wikipedia/fr/thumb/8/8d/Olympique_de_Marseille_logo.svg/1200px-Olympique_de_Marseille_logo.svg.png",
+      "lille": "https://upload.wikimedia.org/wikipedia/en/thumb/6/68/LOSC.svg/1200px-LOSC.svg.png",
+      "losc": "https://upload.wikimedia.org/wikipedia/en/thumb/6/68/LOSC.svg/1200px-LOSC.svg.png"
+    };
+
+    let annees = 1;
+    let prixMensuelEssentielHT = 0;
+    let prixMensuelAvanceHT = 0;
+    let prixMensuelExpertHT = 0;
+
+    function setYears(value) {
+      annees = value;
+      document.querySelectorAll('.year-selector button').forEach(btn => btn.classList.remove('active'));
+      document.getElementById(`y${value}`).classList.add('active');
+      calculer();
+    }
+
+    function calculer() {
+      try {
+        // Récupération des valeurs (en HT)
+        const essentiel = parseInt(document.getElementById("essentiel").value) || 0;
+        const avance = parseInt(document.getElementById("avance").value) || 0;
+        const expert = parseInt(document.getElementById("expert").value) || 0;
+        const workshop = document.getElementById("workshop").checked ? 250 : 0;
+        const ateliers = document.getElementById("ateliers").checked ? 40 : 0;
+        const accompagnement = document.getElementById("accompagnement").checked ? 165 : 0;
+
+        // Calcul HT des coûts mensuels par licence
+        prixMensuelEssentielHT = essentiel * 19;
+        prixMensuelAvanceHT = avance * 39;
+        prixMensuelExpertHT = expert * 49;
+        let prixMensuelHT = prixMensuelEssentielHT + prixMensuelAvanceHT + prixMensuelExpertHT + ateliers + accompagnement;
+
+        // Application de la réduction en fonction de la durée
+        const reduction = annees === 2 ? 0.05 : (annees === 3 ? 0.08 : 0);
+        prixMensuelHT = prixMensuelHT * (1 - reduction);
+        const prixAnnuelHT = prixMensuelHT * 12;
+        const coutTotalHT = (prixAnnuelHT * annees) + workshop;
+
+        // Conversion en TTC (20% de TVA)
+        const TVA = 1.20;
+        const prixMensuelEssentielTTC = prixMensuelEssentielHT * TVA;
+        const prixMensuelAvanceTTC = prixMensuelAvanceHT * TVA;
+        const prixMensuelExpertTTC = prixMensuelExpertHT * TVA;
+        const prixMensuelTTC = prixMensuelHT * TVA;
+        const prixAnnuelTTC = prixAnnuelHT * TVA;
+        const coutTotalTTC = coutTotalHT * TVA;
+
+        // Mise à jour des affichages des sliders
+        document.getElementById("valEssentiel").textContent = essentiel;
+        document.getElementById("valAvance").textContent = avance;
+        document.getElementById("valExpert").textContent = expert;
+
+        // Fonction de formatage en devise
+        const formatCurrency = (amount) => new Intl.NumberFormat('fr-FR', {
+          style: 'currency',
+          currency: 'EUR'
+        }).format(amount);
+
+        // Mise à jour des coûts affichés pour chaque licence (affichage en HT et TTC)
+        document.getElementById("coutEssentielHTCard").textContent = formatCurrency(prixMensuelEssentielHT) + " HT";
+        document.getElementById("coutEssentielTTCCard").textContent = formatCurrency(prixMensuelEssentielTTC) + " TTC";
+        document.getElementById("coutAvanceHTCard").textContent = formatCurrency(prixMensuelAvanceHT) + " HT";
+        document.getElementById("coutAvanceTTCCard").textContent = formatCurrency(prixMensuelAvanceTTC) + " TTC";
+        document.getElementById("coutExpertHTCard").textContent = formatCurrency(prixMensuelExpertHT) + " HT";
+        document.getElementById("coutExpertTTCCard").textContent = formatCurrency(prixMensuelExpertTTC) + " TTC";
+
+        // Mise à jour du récapitulatif financier (montants HT et TTC)
+        document.getElementById("coutMensuelHT").textContent = formatCurrency(prixMensuelHT) + " HT";
+        document.getElementById("coutMensuelTTC").textContent = formatCurrency(prixMensuelTTC) + " TTC";
+        document.getElementById("coutAnnuelHT").textContent = formatCurrency(prixAnnuelHT) + " HT";
+        document.getElementById("coutAnnuelTTC").textContent = formatCurrency(prixAnnuelTTC) + " TTC";
+        document.getElementById("coutTotalHT").textContent = formatCurrency(coutTotalHT) + " HT";
+        document.getElementById("coutTotalTTC").textContent = formatCurrency(coutTotalTTC) + " TTC";
+      } catch (error) {
+        console.error("Erreur dans le calcul:", error);
+      }
+    }
+
+    function updatePdfSummary() {
+      // Récupération du nom du club depuis le champ de saisie
+      let clubName = document.getElementById("clubNameInput").value.trim();
+      
+      let logoHTML = "";
+      if (clubName !== "") {
+        let lowerClubName = clubName.toLowerCase();
+        if (clubLogos[lowerClubName]) {
+          // Encapsulation du logo dans une div pour un positionnement absolu
+          logoHTML = `<div style="position: absolute; top: 10px; right: 10px;">
+                        <img src="${clubLogos[lowerClubName]}" alt="${clubName} logo" style="max-height: 80px; max-width: 80px;">
+                      </div>`;
         }
+      }
+      
+      let essentielCount = document.getElementById("essentiel").value;
+      let avanceCount = document.getElementById("avance").value;
+      let expertCount = document.getElementById("expert").value;
+      
+      let licensesHtml = "";
+      if (essentielCount > 0) {
+        licensesHtml += `<p>Essentiel : ${essentielCount} licence(s) - ${document.getElementById("coutEssentielHTCard").textContent} / ${document.getElementById("coutEssentielTTCCard").textContent}</p>`;
+      }
+      if (avanceCount > 0) {
+        licensesHtml += `<p>Avancé : ${avanceCount} licence(s) - ${document.getElementById("coutAvanceHTCard").textContent} / ${document.getElementById("coutAvanceTTCCard").textContent}</p>`;
+      }
+      if (expertCount > 0) {
+        licensesHtml += `<p>Expert : ${expertCount} licence(s) - ${document.getElementById("coutExpertHTCard").textContent} / ${document.getElementById("coutExpertTTCCard").textContent}</p>`;
+      }
+      if (!licensesHtml.trim()) {
+        licensesHtml = `<p>Aucune licence sélectionnée</p>`;
+      }
+      
+      let servicesArr = [];
+      if (document.getElementById("workshop").checked) { servicesArr.push("Workshop Data Science"); }
+      if (document.getElementById("ateliers").checked) { servicesArr.push("2 Ateliers + Suivi"); }
+      if (document.getElementById("accompagnement").checked) { servicesArr.push("Accompagnement Pro"); }
+      let servicesHtml = `<p>${servicesArr.length > 0 ? servicesArr.join(", ") : "Aucun service sélectionné"}</p>`;
+      
+      let recapHtml = `<p>Mensuel Total : ${document.getElementById("coutMensuelHT").textContent} / ${document.getElementById("coutMensuelTTC").textContent}</p>`;
+      recapHtml += `<p>Annuel Total : ${document.getElementById("coutAnnuelHT").textContent} / ${document.getElementById("coutAnnuelTTC").textContent}</p>`;
+      recapHtml += `<p>Total Projet : ${document.getElementById("coutTotalHT").textContent} / ${document.getElementById("coutTotalTTC").textContent}</p>`;
+      
+      let summaryHtml = `<div style="position:relative;">${logoHTML}
+        <div style="text-align:center; margin-bottom: 20px;">
+          <h1 style="margin-bottom:10px;">Proposition Commerciale</h1>
+          <h2 style="margin-bottom:20px;">${clubName || "Nom du club non renseigné"}</h2>
+        </div>
+      </div>`;
+      summaryHtml += `<div class="cards">
+        <div class="card essentiel" style="border-top: 5px solid #e63946;">
+          <h3>Licences</h3>
+          ${licensesHtml}
+        </div>
+        <div class="card avance" style="border-top: 5px solid #1d3557;">
+          <h3>Services Data Science</h3>
+          ${servicesHtml}
+        </div>
+        <div class="card total-cost" style="border-top: 5px solid var(--primary-color);">
+          <h3>Récapitulatif Financier</h3>
+          ${recapHtml}
+        </div>
+      </div>`;
+      
+      document.getElementById("pdfSummary").innerHTML = summaryHtml;
+    }
 
-        function calculer() {
-            let essentiel = parseInt(document.getElementById("essentiel").value) || 0;
-            let avance = parseInt(document.getElementById("avance").value) || 0;
-            let expert = parseInt(document.getElementById("expert").value) || 0;
-            let workshop = document.getElementById("workshop").checked ? 250 : 0;
-            let ateliers = document.getElementById("ateliers").checked ? 40 : 0;
-            let accompagnement = document.getElementById("accompagnement").checked ? 165 : 0;
+    // Fonction d'export en PDF qui génère la synthèse et déclenche l'impression
+    function exportPDF() {
+      updatePdfSummary();
+      // Délai pour s'assurer que le DOM est mis à jour avant l'impression
+      setTimeout(() => {
+        window.print();
+      }, 500);
+    }
 
-            let prixMensuelEssentiel = essentiel * 19;
-            let prixMensuelAvance = avance * 39;
-            let prixMensuelExpert = expert * 49;
-            let prixMensuel = prixMensuelEssentiel + prixMensuelAvance + prixMensuelExpert + ateliers + accompagnement;
+    function showForm() {
+      // Récupération des valeurs pour le mail
+      const essentielCount = document.getElementById("essentiel").value;
+      const avanceCount = document.getElementById("avance").value;
+      const expertCount = document.getElementById("expert").value;
+      const workshopChecked = document.getElementById("workshop").checked ? "Oui" : "Non";
+      const ateliersChecked = document.getElementById("ateliers").checked ? "Oui" : "Non";
+      const accompagnementChecked = document.getElementById("accompagnement").checked ? "Oui" : "Non";
 
-            let reduction = annees === 2 ? 0.05 : (annees === 3 ? 0.08 : 0);
-            prixMensuel *= (1 - reduction);
-            let prixAnnuel = prixMensuel * 12;
-            let coutTotal = prixAnnuel * annees + workshop;
+      const coutEssentielHT = document.getElementById("coutEssentielHTCard").textContent;
+      const coutEssentielTTC = document.getElementById("coutEssentielTTCCard").textContent;
+      const coutAvanceHT = document.getElementById("coutAvanceHTCard").textContent;
+      const coutAvanceTTC = document.getElementById("coutAvanceTTCCard").textContent;
+      const coutExpertHT = document.getElementById("coutExpertHTCard").textContent;
+      const coutExpertTTC = document.getElementById("coutExpertTTCCard").textContent;
 
-            const formatCurrency = (amount) => new Intl.NumberFormat('fr-FR', {style: 'currency', currency: 'EUR'}).format(amount);
+      const coutMensuelHT = document.getElementById("coutMensuelHT").textContent;
+      const coutMensuelTTC = document.getElementById("coutMensuelTTC").textContent;
+      const coutAnnuelHT = document.getElementById("coutAnnuelHT").textContent;
+      const coutAnnuelTTC = document.getElementById("coutAnnuelTTC").textContent;
+      const coutTotalHT = document.getElementById("coutTotalHT").textContent;
+      const coutTotalTTC = document.getElementById("coutTotalTTC").textContent;
 
-            // Afficher les nombres de licences
-            document.getElementById("valEssentiel").textContent = essentiel;
-            document.getElementById("valAvance").textContent = avance;
-            document.getElementById("valExpert").textContent = expert;
+      let subject = "Simulation de coût - Demande de contact";
+      let body = "Bonjour,\r\n\r\n";
+      body += "Voici les détails de ma simulation de coût :\r\n\r\n";
+      body += "=== Licences ===\r\n";
+      body += "Essentiel : " + essentielCount + " licence(s) (coût : " + coutEssentielHT + " / " + coutEssentielTTC + ")\r\n";
+      body += "Avancé : " + avanceCount + " licence(s) (coût : " + coutAvanceHT + " / " + coutAvanceTTC + ")\r\n";
+      body += "Expert : " + expertCount + " licence(s) (coût : " + coutExpertHT + " / " + coutExpertTTC + ")\r\n\r\n";
+      body += "=== Services Data Science ===\r\n";
+      body += "Workshop Data Science : " + workshopChecked + "\r\n";
+      body += "2 Ateliers + Suivi : " + ateliersChecked + "\r\n";
+      body += "Accompagnement Pro : " + accompagnementChecked + "\r\n\r\n";
+      body += "Durée choisie : " + annees + " an(s)\r\n\r\n";
+      body += "=== Récapitulatif ===\r\n";
+      body += "Mensuel Total : " + coutMensuelHT + " / " + coutMensuelTTC + "\r\n";
+      body += "Annuel Total : " + coutAnnuelHT + " / " + coutAnnuelTTC + "\r\n";
+      body += "Total Projet : " + coutTotalHT + " / " + coutTotalTTC + "\r\n\r\n";
+      body += "Cordialement,\r\n";
+      
+      const mailtoLink = "mailto:sales@votredomaine.com?subject=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent(body);
+      window.location.href = mailtoLink;
+    }
 
-            // Afficher les coûts
-            document.querySelector(".essentiel .cost-value").textContent = formatCurrency(prixMensuelEssentiel);
-            document.querySelector(".avance .cost-value").textContent = formatCurrency(prixMensuelAvance);
-            document.querySelector(".expert .cost-value").textContent = formatCurrency(prixMensuelExpert);
+    function resetForm() {
+      document.getElementById("essentiel").value = 0;
+      document.getElementById("avance").value = 0;
+      document.getElementById("expert").value = 0;
+      document.getElementById("workshop").checked = false;
+      document.getElementById("ateliers").checked = false;
+      document.getElementById("accompagnement").checked = false;
+      setYears(1);
+      calculer();
+    }
 
-            document.getElementById("coutMensuel").textContent = formatCurrency(prixMensuel);
-            document.getElementById("coutAnnuel").textContent = formatCurrency(prixAnnuel);
-            document.getElementById("coutTotal").textContent = formatCurrency(coutTotal);
-
-            // Préparer les données à envoyer dans le mail
-            document.getElementById("formEssentiel").value = essentiel;
-            document.getElementById("formAvance").value = avance;
-            document.getElementById("formExpert").value = expert;
-            document.getElementById("formWorkshop").value = workshop;
-            document.getElementById("formAteliers").value = ateliers;
-            document.getElementById("formAccompagnement").value = accompagnement;
-            document.getElementById("formDuree").value = annees;
-            document.getElementById("formCoutMensuel").value = prixMensuel;
-            document.getElementById("formCoutAnnuel").value = prixAnnuel;
-            document.getElementById("formCoutTotal").value = coutTotal;
-        }
-
-        function showForm() {
-            document.getElementById("simulationForm").style.display = 'block';
-            calculer(); // Assure que les données sont actualisées avant envoi
-        }
-
-        // Appeler la fonction lors du chargement initial pour s'assurer que tout est bien initialisé
-        calculer();
-    </script>
-
+    window.addEventListener("load", calculer);
+  </script>
 </body>
 </html>
