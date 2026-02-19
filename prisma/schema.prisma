@@ -1,0 +1,479 @@
+// Sales Command Center - Prisma Schema
+// MyCoach Pro - Internal Sales Tool
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── AUTH ─────────────────────────────────────────────────────────────────────
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ─── USERS ────────────────────────────────────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  role          UserRole  @default(SALES)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts       Account[]
+  sessions       Session[]
+  ownedContacts  Contact[]        @relation("ContactOwner")
+  ownedOrgs      Org[]            @relation("OrgOwner")
+  tasks          Task[]           @relation("TaskOwner")
+  notes          Note[]
+  stageChanges   ContactStageHistory[]
+  auditLogs      AuditLog[]
+  integrationSettings IntegrationSettings?
+}
+
+enum UserRole {
+  ADMIN
+  MANAGER
+  SALES
+}
+
+// ─── ORGANISATIONS (CLUBS/ACCOUNTS) ──────────────────────────────────────────
+
+model Org {
+  id        String   @id @default(cuid())
+  name      String
+  domain    String?
+  country   String?
+  segment   String?  // LIGUE1, LIGUE2, N1, N2, AMATEUR, etc.
+  tags      String[] @default([])
+  ownerId   String?
+  owner     User?    @relation("OrgOwner", fields: [ownerId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  contacts     Contact[]
+  tasks        Task[]
+  notes        Note[]
+  interactions Interaction[]
+  sellsyLinks  SellsyLink[]
+  metricsSnapshots MetricsSnapshot[]
+}
+
+// ─── CONTACTS ─────────────────────────────────────────────────────────────────
+
+model Contact {
+  id           String   @id @default(cuid())
+  orgId        String?
+  org          Org?     @relation(fields: [orgId], references: [id])
+  firstname    String
+  lastname     String
+  email        String?
+  phone        String?
+  title        String?
+  department   String?
+  country      String?
+  tags         String[] @default([])
+  ownerId      String?
+  owner        User?    @relation("ContactOwner", fields: [ownerId], references: [id])
+  source       String?  // SHEETS, MANUAL, IMPORT
+  sheetRowId   String?  // Row identifier in Google Sheets for push-back
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  pipelineStates   ContactPipelineState[]
+  stageHistory     ContactStageHistory[]
+  tasks            Task[]
+  notes            Note[]
+  interactions     Interaction[]
+  emailThreads     EmailThread[]
+  sellsyLinks      SellsyLink[]
+  metricsSnapshots MetricsSnapshot[]
+}
+
+// ─── PIPELINE ─────────────────────────────────────────────────────────────────
+
+enum StageType {
+  PROSPECTING
+  RENEWAL
+  PARTNERSHIP
+}
+
+model Pipeline {
+  id          String    @id @default(cuid())
+  name        String
+  stageType   StageType @default(PROSPECTING)
+  isDefault   Boolean   @default(false)
+  staleAfterDays Int    @default(14) // X days before stale flag
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  stages           PipelineStage[]
+  contactStates    ContactPipelineState[]
+  stageHistory     ContactStageHistory[]
+  metricsSnapshots MetricsSnapshot[]
+}
+
+model PipelineStage {
+  id          String   @id @default(cuid())
+  pipelineId  String
+  pipeline    Pipeline @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
+  name        String
+  order       Int
+  color       String   @default("#6366f1") // indigo default
+  isDefault   Boolean  @default(false)
+  requiresOwner      Boolean @default(false)
+  requiresNextStep   Boolean @default(false)
+  requiresEmail      Boolean @default(false)
+  rulesJson   Json?    // Custom stage entry/exit rules
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  contactStates  ContactPipelineState[]
+  fromHistory    ContactStageHistory[]  @relation("FromStage")
+  toHistory      ContactStageHistory[]  @relation("ToStage")
+}
+
+// ─── CONTACT PIPELINE STATE ───────────────────────────────────────────────────
+
+enum PipelineStatus {
+  OPEN
+  WON
+  LOST
+}
+
+enum NextStepType {
+  CALL
+  EMAIL
+  MEETING
+  DEMO
+  PROPOSAL
+  CONTRACT
+  OTHER
+}
+
+model ContactPipelineState {
+  id             String          @id @default(cuid())
+  contactId      String
+  contact        Contact         @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  pipelineId     String
+  pipeline       Pipeline        @relation(fields: [pipelineId], references: [id])
+  currentStageId String
+  currentStage   PipelineStage   @relation(fields: [currentStageId], references: [id])
+  status         PipelineStatus  @default(OPEN)
+  lastActivityAt DateTime?
+  nextStepAt     DateTime?
+  nextStepType   NextStepType?
+  nextStepNote   String?
+  score          Int?
+  updatedAt      DateTime        @updatedAt
+
+  @@unique([contactId, pipelineId])
+}
+
+// ─── STAGE HISTORY ────────────────────────────────────────────────────────────
+
+model ContactStageHistory {
+  id             String        @id @default(cuid())
+  contactId      String
+  contact        Contact       @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  pipelineId     String
+  pipeline       Pipeline      @relation(fields: [pipelineId], references: [id])
+  fromStageId    String?
+  fromStage      PipelineStage? @relation("FromStage", fields: [fromStageId], references: [id])
+  toStageId      String
+  toStage        PipelineStage @relation("ToStage", fields: [toStageId], references: [id])
+  changedByUserId String?
+  changedBy      User?         @relation(fields: [changedByUserId], references: [id])
+  changedAt      DateTime      @default(now())
+  reason         String?
+  daysInPrevStage Int?         // Computed on write
+}
+
+// ─── TASKS ────────────────────────────────────────────────────────────────────
+
+enum TaskType {
+  CALL
+  EMAIL
+  MEETING
+  DEMO
+  FOLLOW_UP
+  PROPOSAL
+  OTHER
+}
+
+enum TaskStatus {
+  OPEN
+  DONE
+  CANCELLED
+}
+
+model Task {
+  id        String     @id @default(cuid())
+  contactId String?
+  contact   Contact?   @relation(fields: [contactId], references: [id])
+  orgId     String?
+  org       Org?       @relation(fields: [orgId], references: [id])
+  ownerId   String?
+  owner     User?      @relation("TaskOwner", fields: [ownerId], references: [id])
+  dueDate   DateTime?
+  type      TaskType   @default(OTHER)
+  status    TaskStatus @default(OPEN)
+  notes     String?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+// ─── NOTES ────────────────────────────────────────────────────────────────────
+
+model Note {
+  id        String   @id @default(cuid())
+  contactId String?
+  contact   Contact? @relation(fields: [contactId], references: [id])
+  orgId     String?
+  org       Org?     @relation(fields: [orgId], references: [id])
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+}
+
+// ─── INTERACTIONS (Data Center Interactionnel) ────────────────────────────────
+
+enum InteractionType {
+  EMAIL_OUT
+  EMAIL_IN
+  CALL
+  MEETING
+  DEMO
+  WHATSAPP
+  LINKEDIN
+  NOTE
+  SELLSY_EVENT
+  STAGE_CHANGE
+}
+
+enum InteractionSource {
+  MANUAL
+  GMAIL
+  SELLSY
+  SYSTEM
+}
+
+model Interaction {
+  id          String            @id @default(cuid())
+  contactId   String?
+  contact     Contact?          @relation(fields: [contactId], references: [id])
+  orgId       String?
+  org         Org?              @relation(fields: [orgId], references: [id])
+  type        InteractionType
+  occurredAt  DateTime
+  summary     String?
+  source      InteractionSource @default(MANUAL)
+  externalId  String?           // Gmail thread/message ID or Sellsy activity ID
+  payloadJson Json?             // Full payload for reference
+  createdAt   DateTime          @default(now())
+
+  @@index([contactId, occurredAt])
+  @@index([orgId, occurredAt])
+  @@index([externalId])
+}
+
+// ─── EMAIL THREADS ────────────────────────────────────────────────────────────
+
+model EmailThread {
+  id            String   @id @default(cuid())
+  contactId     String
+  contact       Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  threadId      String   // Gmail thread ID
+  subject       String?
+  snippet       String?
+  lastMessageAt DateTime?
+  lastSentAt    DateTime?
+  hasReply      Boolean  @default(false)
+  replyAt       DateTime?
+  labels        String[] @default([])
+  messagesCount Int      @default(0)
+  updatedAt     DateTime @updatedAt
+
+  @@unique([contactId, threadId])
+  @@index([threadId])
+}
+
+// ─── METRICS SNAPSHOT ─────────────────────────────────────────────────────────
+
+model MetricsSnapshot {
+  id                    String    @id @default(cuid())
+  contactId             String?
+  contact               Contact?  @relation(fields: [contactId], references: [id])
+  orgId                 String?
+  org                   Org?      @relation(fields: [orgId], references: [id])
+  pipelineId            String?
+  pipeline              Pipeline? @relation(fields: [pipelineId], references: [id])
+
+  // Counters (rolling 90 days unless noted)
+  interactionsCount     Int       @default(0)
+  emailsOutCount        Int       @default(0)
+  emailsInCount         Int       @default(0)
+  meetingsCount         Int       @default(0)
+  demosCount            Int       @default(0) // rolling 180 days
+  callsCount            Int       @default(0)
+
+  // Key dates
+  lastInteractionAt     DateTime?
+  lastEmailAt           DateTime?
+  lastEmailOutAt        DateTime?
+  lastEmailInAt         DateTime?
+  lastMeetingAt         DateTime?
+  lastDemoAt            DateTime?
+  nextMeetingAt         DateTime?
+
+  // Indicators
+  replyDetected         Boolean   @default(false)
+  lastReplyAt           DateTime?
+  daysSinceLastActivity Int?
+  staleFlag             Boolean   @default(false)
+  nextStepMissing       Boolean   @default(false)
+
+  // Sellsy cache
+  sellsyStage           String?
+  sellsyAmount          Float?
+  sellsyCloseDate       DateTime?
+
+  updatedAt             DateTime  @updatedAt
+
+  @@unique([contactId, pipelineId])
+  @@unique([orgId, pipelineId])
+}
+
+// ─── SELLSY LINK ──────────────────────────────────────────────────────────────
+
+model SellsyLink {
+  id                  String    @id @default(cuid())
+  contactId           String?
+  contact             Contact?  @relation(fields: [contactId], references: [id])
+  orgId               String?
+  org                 Org?      @relation(fields: [orgId], references: [id])
+  sellsyPersonId      String?
+  sellsyCompanyId     String?
+  sellsyOpportunityId String?
+  sellsyStage         String?
+  amount              Float?
+  currency            String?   @default("EUR")
+  closeDate           DateTime?
+  lastSyncAt          DateTime?
+  updatedAt           DateTime  @updatedAt
+
+  @@unique([contactId])
+  @@unique([orgId])
+}
+
+// ─── INTEGRATION SETTINGS ────────────────────────────────────────────────────
+
+model IntegrationSettings {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Google
+  googleAccessToken    String?  @db.Text // Encrypted
+  googleRefreshToken   String?  @db.Text // Encrypted
+  googleTokenExpiry    DateTime?
+  googleScopes         String[] @default([])
+
+  // Google Sheets
+  sheetsEnabled        Boolean  @default(false)
+  sheetId              String?
+  tabName              String?
+  columnMapping        Json?    // { email: "A", firstname: "B", ... }
+  pushEnabled          Boolean  @default(false) // Push stage/owner back to sheet
+  lastSheetsSyncAt     DateTime?
+  lastSheetsRowHash    Json?    // { rowId: hash } for incremental detection
+
+  // Gmail
+  gmailEnabled         Boolean  @default(false)
+  lastGmailSyncAt      DateTime?
+  gmailHistoryId       String?  // For incremental history sync
+
+  // Sellsy
+  sellsyEnabled        Boolean  @default(false)
+  sellsyClientId       String?
+  sellsyClientSecret   String?  @db.Text // Encrypted
+  sellsyAccessToken    String?  @db.Text // Encrypted
+  sellsyRefreshToken   String?  @db.Text // Encrypted
+  sellsyTokenExpiry    DateTime?
+  lastSellsySyncAt     DateTime?
+
+  syncFrequency        Int      @default(30) // minutes
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
+// ─── EVENTS (Analytics) ──────────────────────────────────────────────────────
+
+model Event {
+  id          String   @id @default(cuid())
+  type        String   // stage_changed, contact_created, task_created, etc.
+  contactId   String?
+  orgId       String?
+  userId      String?
+  payloadJson Json?
+  createdAt   DateTime @default(now())
+
+  @@index([type, createdAt])
+  @@index([contactId])
+  @@index([userId])
+}
+
+// ─── AUDIT LOG ────────────────────────────────────────────────────────────────
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id])
+  action      String   // STAGE_CHANGE, CONTACT_UPDATE, etc.
+  resourceType String
+  resourceId  String
+  before      Json?
+  after       Json?
+  createdAt   DateTime @default(now())
+
+  @@index([resourceType, resourceId])
+}
