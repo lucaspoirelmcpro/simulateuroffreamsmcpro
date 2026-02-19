@@ -1,0 +1,19 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/sync",
+      "schedule": "*/30 * * * *"
+    }
+  ],
+  "functions": {
+    "app/api/sync/gmail/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/sync/sheets/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/cron/sync/route.ts": {
+      "maxDuration": 300
+    }
+  }
+}
